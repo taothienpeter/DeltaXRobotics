@@ -11,9 +11,8 @@
 AccelStepper LeftStepper(1, driverPUL_A, driverDIR_A); // (using driver mode, step pin, dir pin)
 AccelStepper RightStepper(1, driverPUL_B, driverDIR_B);
 // Variables
-float linear_x, angular_z; // tín hiệu điều khiển từ ROS2 jazzy
 float speed_linear, speed_angular; // tốc độ trung bình cho tịnh tiến, và rẽ
-int speed_A, speed_B; // tốc độ động cơ bước (tính bằng step/vòng)
+int speed_L, speed_R; // tốc độ động cơ bước (tính bằng step/vòng)
 //some variable:
 float maxSpeed = 20000;
 float accceleration = 2000;
@@ -42,26 +41,21 @@ void setup() {
   step_init();
   
 }
-void loop() {    
+void loop() {  
   serial_Read();
-  motor_Speed_Convert();
   motor_Speed_Set();
 }
 
 void serial_Read(){ // đọc thông tin gửi qua serial port
    if (Serial.available() > 0) {// read input
     String command = Serial.readStringUntil('\n');
-    linear_x = command.substring(0, command.indexOf(',')).toFloat();
-    angular_z = command.substring(command.indexOf(',') + 1).toFloat();}
-}
-void motor_Speed_Convert(){ // tính toán vận tốc 2 động cơ
-    speed_A = (linear_x * speed_linear) - (angular_z * speed_angular);
-    speed_B = (linear_x * speed_linear) + (angular_z * speed_angular);
+    speed_L = command.substring(0, command.indexOf(',')).toFloat();
+    speed_R = command.substring(command.indexOf(',') + 1).toFloat();}
 }
 void motor_Speed_Set (){ //pulse/micro second
-  RightStepper.setSpeed(speed_A);
+  RightStepper.setSpeed(speed_L);
   RightStepper.run();
-  LeftStepper.setSpeed(speed_B);
+  LeftStepper.setSpeed(speed_R);
   LeftStepper.run();
 }
 
