@@ -37,7 +37,7 @@ void step_init(){
 }
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   step_init();
   
 }
