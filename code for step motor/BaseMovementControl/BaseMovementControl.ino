@@ -8,16 +8,18 @@
 #define driverEnable_A 49 
 #define driverEnable_B 48
 
+#define BAUDRATE 115200
+
 AccelStepper LeftStepper(1, driverPUL_A, driverDIR_A); // (using driver mode, step pin, dir pin)
 AccelStepper RightStepper(1, driverPUL_B, driverDIR_B);
 // Variables
-char argv1[16];
-char argv2[16];
-short index;
 
-float speed_L = 1600, speed_R = 1600; // tốc độ động cơ bước (tính bằng step/vòng)
-float* pSpeed_L = &speed_L;
-float* pSpeed_R = &speed_R;
+char chr, cmd;
+short arg = 0, arg1, arg2 , index = 0;
+int speed_L, speed_R;
+char argv1[16], argv2[16];
+
+ // tốc độ động cơ bước (tính bằng step/vòng)
 //some variable:
 float maxSpeed = 1600;
 float accceleration = 0;
@@ -42,7 +44,7 @@ void step_init(){
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(BAUDRATE);
   step_init();
   
 }
@@ -51,30 +53,77 @@ void loop() {
   //test();
 }
 
-void serial_Read(){ // đọc thông tin gửi qua serial port
-
-  if (Serial.available() > 0) {// read input
-    
-    speed_L = Serial.readBytesUntil(',', char);
-    speed_R = Serial.parseInt();
-    Serial.println(speed_L);
-    Serial.println(speed_R);
-  }
-  else{
+void serial_Read(){
+  while (Serial.available() > 0) {
+    chr = Serial.read();
+    //Serial.println(chr);
+    if (chr == 13 || chr == ',' || chr == '\n' || chr == '\r') { 
+      if (arg == 1) argv1[index] = NULL;
+      else if (arg == 2) argv2[index] = NULL;
+      //chạy chương trình 
+      runCommand();
+      //reset cmd
+      resetCommand();
+    }
+    else if (chr == ' ') {
+      if (arg == 0) arg = 1;
+      else if (arg == 1)  {
+        argv1[index] = NULL;
+        arg = 2;
+        index = 0;
+      }
+      continue;
+    }
+    else {
+      if (arg == 0) {
+        // The first arg is the single-letter command
+        cmd = chr;
+      }
+      else if (arg == 1) {
+        // Subsequent arguments can be more than one character
+        argv1[index] = chr;
+        index++;
+      }
+      else if (arg == 2) {
+        argv2[index] = chr;
+        index++;
+  }}}
+  
     RightStepper.setSpeed(speed_L);
     //Serial.print("ok");
     RightStepper.run();
     LeftStepper.setSpeed(speed_R);
-    LeftStepper.run();}
-}
-void test(){
-    RightStepper.setSpeed(speed_L);
-    RightStepper.run();
-    LeftStepper.setSpeed(speed_R);
     LeftStepper.run();
 }
-void feedback(){
-  Serial.write("OK");
+
+void resetCommand() {
+  
+  cmd = NULL;
+  memset(argv1, 0, sizeof(argv1));
+  memset(argv2, 0, sizeof(argv2));
+  arg1 = 0;
+  arg2 = 0;
+  arg = 0;
+  index = 0;
 }
-
-
+int runCommand() {
+  int i = 0;
+  char *p = argv1;
+  char *str;
+  arg1 = atoi(argv1);
+  arg2 = atoi(argv2);
+  
+  switch(cmd) {
+  case 'b':
+    Serial.println(BAUDRATE);
+    break;
+  case 'r':
+    speed_L = arg1;
+    speed_R = arg2;
+    Serial.println("OK"); 
+    break;
+  default:
+    Serial.println("Invalid Command");
+    break;
+  }
+}
